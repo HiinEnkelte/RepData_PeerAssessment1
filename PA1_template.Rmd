@@ -22,7 +22,7 @@ unlink("activity.csv")
 
 **Process/transform the data (if necessary) into a format suitable for your analysis**
 
-The date column was converted to Date objects. The 5-minute intervals also need to be mapped to Time objects, but that will happen later, since we'll be averaging over intervals.
+The date column was converted to Date objects. The 5-minute intervals also need to be mapped to Time objects - but that will happen later, after we've averaged over intervals.
 
 ```{r}
 # Make date strings into Date objects
@@ -43,11 +43,8 @@ t_complete <- tbl[complete.cases(tbl),]
 
 ```{r}
 reported_steps_per_day <- aggregate(steps ~ date, t_complete, sum)
-hist(reported_steps_per_day$steps,
-     col="steelblue",
-     main="Total reported daily steps",
-     xlab="",
-     breaks=seq(0,22000,by=1000))
+hist(reported_steps_per_day$steps, main="Total reported daily steps",
+     col="steelblue", xlab="")
 ```
 
 **Calculate and report the mean and median total number of steps taken per day**
@@ -61,7 +58,7 @@ median(reported_steps_per_day$steps)
 
 **1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)**
 
-After averaging over the intervals, I mapped the intervals to timestamps with an arbitrary date and plotted against those. This makes the curve smoother, because e.g. the gap between 155 (1:55 AM) and 200 (2:00 AM) is 5, not 45. Note the difference at crucial inflection points, e.g. at noon (1200), and between 7 and 8 PM (2000).
+After averaging over the intervals, I mapped the intervals to timestamps with an arbitrary date and plotted against those. This makes the curve smoother, because e.g. the gap between 155 (1:55 AM) and 200 (2:00 AM) is 5, not 45.
 
 ```{r}
 # Average steps over intervals
@@ -103,6 +100,8 @@ legend("topright",
        lty=c("solid","dotted"))
 ```
 
+Note how the curves plotted against raw vs. time intervals differ at crucial inflection points, e.g. between 5 and 6 AM (600), at noon (1200), and between 7 and 8 PM (2000).
+ 
 Looks as if there's a furious burst of activity between 8 and 9 AM, as people get up and scramble to prepare for the day. Then people are about half as active, more or less, until around 8 PM, when the activity levels taper off.
 
 **2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?**
@@ -128,19 +127,13 @@ nrow(t_missing)
 There are 2304 rows. Just for kicks, let's see how many NA values there are for each day.
 
 ```{r}
-library(ggplot2)
 na.count <- function(d) { sum(is.na(tbl[tbl$date == d,][["steps"]])) }
 unique_dates <- unique(tbl$date)
 t_date2na <- data.frame(date = unique_dates, na_count = sapply(unique_dates, na.count))
 length(unique_dates)
-subset(t_date2na, na_count > 0)
-ggplot(t_date2na, aes(date,na_count)) +
-  geom_histogram(stat="identity",colour="black",fill="gray70") +
-    theme(axis.text.x = element_text(angle=90,size=8)) +
-    scale_x_date(breaks="1 day",
-                 limits=c(min(reported_steps_per_day$date)+1,
-                         max(reported_steps_per_day$date)-1)) +
-    scale_y_continuous(name= "missing values", breaks=c(0,100,200,288))
+na_days <- subset(t_date2na, na_count > 0)
+na_days
+nrow(na_days)
 ```
 
 So 2304 rows = 8 days x 24 hours x 12 five-minute intervals per hour. Of the 61 days total, there are eight days with all values missing, and no values missing elsewhere. Good to know!
@@ -165,19 +158,12 @@ t_imputed <- rbind(t_complete,t_missing)
 
 ```{r}
 imputed_steps_per_day <- aggregate(steps ~ date, sum, data=t_imputed)
+
+hist(imputed_steps_per_day$steps, main="Reported + imputed daily steps",
+     col="gray70", xlab="")
 ```
 
-```{r}
-hist(imputed_steps_per_day$steps,
-     col="gray70",
-     main="Imputed daily steps",
-     xlab="",
-     ylim=c(0,20),
-     xlim=c(0,22000),
-     breaks=seq(0,22000,by=1000))
-```
-
-The graph below compares the reported and imputed totals: exactly the same, except for the eight days with missing values.
+The graph below compares the reported and imputed totals: exactly the same, except for the eight days with missing values. Originally, there were 10 days containing the mean number of steps. Now there are 18.
 
 ```{r}
 # Set up a data frame comparing reported to imputed totals.
@@ -190,6 +176,7 @@ names(comparison) <- c("date", "steps", "status")
 comparison$status <- factor(comparison$status, levels=c("reported", "imputed"))
 ```
 ```{r}
+library(ggplot2)
 ggplot(comparison,aes(x=steps,fill=status)) +
   # position "dodge" = side by side
   geom_histogram(binwidth=1000,position="dodge",colour="black") +
@@ -216,7 +203,7 @@ median(imputed_steps_per_day$steps) - median(reported_steps_per_day$steps)
 
 **What is the impact of imputing missing data on the estimates of the total daily number of steps?**
 
-The median is now equal to the mean, because there are eight extra imputed days with exactly the mean number of steps. This reduces the variation in the data set; see the density curves below.
+The median is now equal to the mean, because of the extra imputed days with exactly the mean number of steps. This reduces the variation in the data set; see the density curves below.
 
 ```{r}
 ggplot(comparison, aes(x=steps,colour=status)) + geom_density() +
@@ -224,7 +211,7 @@ ggplot(comparison, aes(x=steps,colour=status)) + geom_density() +
   
 ```
 
-This reduction in variation may affect estimates like the one in the next section.
+This reduced variability may affect estimates like the one in the next section.
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
@@ -261,12 +248,13 @@ library(lattice)
 # Plot against timestamps...
 xticks <- seq(interval2time(0), by="1 hour",length=24)
 # but label the x-axis by intervals so as not to confuse the grader
-xlabels <- seq(0,2400,by=600)
-xlabels <- as.vector(rbind(xlabels,"","","","",""))
+xlabels <- seq(0,2400,by=300)
+xlabels <- as.vector(rbind(xlabels,"",""))
 
 # Do the plot
 xyplot( steps ~ timestamp | day_type, data=mean_steps2, type="l",
-        scales=list(alternating=3, x=list(at=xticks, labels=xlabels)))
+        xlab="interval", ylab="Number of steps", layout=c(1,2),
+        scales=list(alternating=3, x=list(at=xticks, labels=xlabels)) )
 ```
 
 Not surprising. That burst of early-morning activity we noticed in the earlier time series is confined to weekdays, when people have to get to work and school. On weekends, people get up and go to bed a couple of hours later, and have greater overall activity levels all day.
