@@ -274,7 +274,7 @@ median(imputed_steps_per_day$steps)
 
 **Do these values differ from the estimates from the first part of the assignment?**
 
-Yes. The mean is the same, but the median has increased slightly.
+The mean is the same, but the median has increased slightly.
 
 
 ```r
