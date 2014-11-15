@@ -178,6 +178,7 @@ comparison$status <- factor(comparison$status, levels=c("reported", "imputed"))
 ```{r}
 library(ggplot2)
 ggplot(comparison,aes(x=steps,fill=status)) +
+  ggtitle("Reported versus imputed daily steps") +
   # position "dodge" = side by side
   geom_histogram(binwidth=1000,position="dodge",colour="black") +
   # less ugly than the default colors
@@ -207,6 +208,7 @@ The median is now equal to the mean, because of the extra imputed days with exac
 
 ```{r}
 ggplot(comparison, aes(x=steps,colour=status)) + geom_density() +
+  ggtitle("Reported versus imputed daily steps: density curves") +
   scale_color_manual(values=c("steelblue","gray70"))
   
 ```
