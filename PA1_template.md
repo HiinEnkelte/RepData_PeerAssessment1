@@ -130,12 +130,12 @@ Looks as if there's a furious burst of activity between 8 and 9 AM, as people ge
 
 
 ```r
-subset(mean_steps_per_interval, steps == max(steps), select=c(interval,steps))
+subset(mean_steps_per_interval, steps == max(steps))
 ```
 
 ```
-##     interval    steps
-## 104      835 206.1698
+##     interval    steps  timestamp
+## 104      835 206.1698 1349094900
 ```
 
 The interval is 835, containing an average of 206 steps per day. So, as the graph implies, peak activity is at 8:35 AM.  Not a good time to ride the Metro!
